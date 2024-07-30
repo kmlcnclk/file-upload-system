@@ -12,14 +12,14 @@ class MainRouter {
   public handleRequests = (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url || "";
 
-    if (url.startsWith("/file")) {
-      this.fileRoute.routes(req, res);
-    } else {
-      Response.send(res, {
-        status: 404,
-        data: { message: "Route not found" },
-      });
-    }
+    const route = url.split("/")[1];
+
+    if (route == "file") return this.fileRoute.routes(req, res);
+
+    return Response.send(res, {
+      status: 404,
+      data: { message: "Route not found" },
+    });
   };
 }
 

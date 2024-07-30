@@ -8,25 +8,30 @@ import Response from "./utils/response";
 import LoggerMiddleware from "./middlewares/logger.middleware";
 import { readFileSync } from "fs";
 import { createServer as createHttpsServer } from "https";
-import { redirectToHttps } from "./utils/http";
+import envJson from "../env.json";
 
-const mainRoute = new MainRoute();
+class Main {
+  mainRoute: MainRoute;
+  HTTP_PORT: number;
+  HTTPS_PORT: number;
 
-const initializeServer = async () => {
-  try {
+  constructor() {
+    this.mainRoute = new MainRoute();
+    this.HTTP_PORT = envJson.HTTP_PORT;
+    this.HTTPS_PORT = envJson.HTTPS_PORT;
+  }
+
+  public initializeServer = () => {
     const httpsOptions = {
       key: readFileSync("cert/key.pem"),
       cert: readFileSync("cert/cert.pem"),
     };
 
-    const httpPort = 8080;
-    const httpsPort = 8443;
-
     // HTTP Server
     createHttpServer((req, res) => {
-      redirectToHttps(req, res, httpsPort);
-    }).listen(httpPort, () => {
-      console.log(`HTTP server listening on port ${httpPort}`);
+      this.redirectToHttps(req, res, this.HTTPS_PORT);
+    }).listen(this.HTTP_PORT, () => {
+      console.log(`HTTP server listening on port ${this.HTTP_PORT}`);
     });
 
     // HTTPS Server
@@ -37,7 +42,7 @@ const initializeServer = async () => {
         const method = req.method || "";
 
         if (url && method) {
-          mainRoute.handleRequests(req, res);
+          this.mainRoute.handleRequests(req, res);
         } else {
           Response.send(res, {
             status: 404,
@@ -47,13 +52,24 @@ const initializeServer = async () => {
       }
     )
       .on("request", LoggerMiddleware.info)
-      .listen(httpsPort, () => {
-        console.log(`HTTPS server listening on port ${httpsPort}`);
+      .listen(this.HTTPS_PORT, () => {
+        console.log(`HTTPS server listening on port ${this.HTTPS_PORT}`);
       });
-  } catch (error) {
-    console.error("Error during server initialization:", error);
-    process.exit(1); // Exit the process with an error code
-  }
-};
+  };
 
-initializeServer();
+  private redirectToHttps = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    httpsPort: number
+  ) => {
+    const host = req.headers["host"]?.split(":")[0];
+    res.writeHead(307, {
+      Location: `https://${host}:${httpsPort}${req.url}`,
+    });
+    res.end();
+  };
+}
+
+const main = new Main();
+
+main.initializeServer();

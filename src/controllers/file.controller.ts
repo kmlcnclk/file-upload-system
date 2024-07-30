@@ -63,12 +63,10 @@ class FileController {
     return Response.send(res, { status: 200, data: { status: 200, files } });
   };
 
-  public handleGet = async (
-    req: IncomingMessage,
-    res: ServerResponse,
-    query: ParsedUrlQuery
-  ) => {
-    const { filename } = query;
+  public handleGet = async (req: IncomingMessage, res: ServerResponse) => {
+    // @ts-ignore
+    const { filename } = req.query;
+
     if (!filename)
       return Response.send(res, {
         status: 400,
@@ -82,12 +80,9 @@ class FileController {
     return Response.send(res, { status: data.status, data });
   };
 
-  public handleDelete = async (
-    req: IncomingMessage,
-    res: ServerResponse,
-    query: ParsedUrlQuery
-  ) => {
-    const { filename } = query;
+  public handleDelete = async (req: IncomingMessage, res: ServerResponse) => {
+    // @ts-ignore
+    const { filename } = req.query;
 
     if (!filename)
       return Response.send(res, {
